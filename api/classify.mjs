@@ -35,13 +35,13 @@ const schema = dual => ({
         economic_activity:{type:'string'}, nace:{type:'string'}, scope_segment:{type:'string'}, object:{type:'string'},
         product_function:{type:'string'}, process:{type:'string'},
         activity:{type:'string', enum:['設計','製造','印刷','銷售','安裝','維修','運輸','倉儲','顧問','試驗','租賃','管理','服務']},
-        semantic_classification:{type:'string'}, gpt_technical_category:{type:'string'},
+        semantic_classification:{type:'string'},
         formal_match:{type:'string', enum:['exact','partial','none','conflict']},
         confidence:{type:'integer',minimum:0,maximum:100}, reason:{type:'string'},
         evidence:{type:'array',items:{type:'string'}},
         missing_information:{type:'array',items:{type:'string'}}
       },
-      required:['economic_activity','product_function','process','activity','nace','reason','confidence','missing_information','scope_segment','object','semantic_classification','gpt_technical_category','formal_match','evidence']
+      required:['economic_activity','product_function','process','activity','nace','reason','confidence','missing_information','scope_segment','object','semantic_classification','formal_match','evidence']
     }},
     outside_whitelist_suggestions:{type:'array',maxItems:6,items:{type:'object',additionalProperties:false,properties:{nace:{type:'string'},scope_segment:{type:'string'},reason:{type:'string'},evidence:{type:'array',items:{type:'string'}}},required:['nace','scope_segment','reason','evidence']}},
     missing_information:{type:'array',items:{type:'string'}}, review_required:{type:'boolean'}
