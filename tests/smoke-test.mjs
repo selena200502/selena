@@ -8,6 +8,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'build-ui.js'), 'utf8');
 const api = fs.readFileSync(path.join(root, 'api/classify.mjs'), 'utf8');
+const riskEngineSource = fs.readFileSync(path.join(root, 'risk-engine.js'), 'utf8');
 for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
   if (match[1].trim()) new vm.Script(match[1]);
 }
@@ -19,6 +20,10 @@ assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
 assert.match(html, /Object\.keys\(table\)\.find\(key=>normalizeTechnicalClass\(key\)===normalized\)/, 'risk lookup must preserve workbook codes with leading zero');
+assert.doesNotMatch(html, /RiskEngine\.riskReferenceClass\([^\n]*technicalClass/, 'risk lookup must not receive the certification technical category');
+assert.doesNotMatch(api, /gpt_technical_category/, 'GPT response schema must not return a technical category');
+assert.doesNotMatch(html, /accepted\.gpt_technical_category|item\.gpt_technical_category|scope\.gpt_technical_category|rule\.gpt_technical_category/, 'GPT mapping must not write or provide a fallback technical category');
+assert.match(html, /FALLBACK_NO_RISK_TABLE_MAPPING/, 'missing risk mapping must remain an explicit risk-table review');
 assert.doesNotMatch(html, /v81RetainGptPreferredScopes\(output,preferred\);if\(preferred\.length\)render\(output\)/, 'GPT Preferred must not erase controlled risk and audit-day sections');
 assert.match(api, /process\.env\.OPENAI_API_KEY/);
 assert.doesNotMatch(html + ui + api, /sk-[A-Za-z0-9_-]{12,}/);
@@ -44,7 +49,7 @@ let outbound;
 globalThis.fetch = async (_url, options) => {
   outbound = JSON.parse(options.body);
   return {ok:true, async json(){return {model:'test-model', output_text:JSON.stringify({
-    candidates:[{economic_activity:'製造與銷售',product_function:'保護表面',process:'混合與包裝',activity:'製造',nace:'20.30',reason:'測試',confidence:90,missing_information:[],scope_segment:'油漆製造',object:'油漆',semantic_classification:'塗料製造',gpt_technical_category:'待本地規則映射',formal_match:'exact',evidence:['製造']}],
+    candidates:[{economic_activity:'製造與銷售',product_function:'保護表面',process:'混合與包裝',activity:'製造',nace:'20.30',reason:'測試',confidence:90,missing_information:[],scope_segment:'油漆製造',object:'油漆',semantic_classification:'塗料製造',formal_match:'exact',evidence:['製造']}],
     outside_whitelist_suggestions:[],missing_information:[],review_required:true
   })};}};
 };
@@ -55,6 +60,17 @@ assert.equal(body.candidates[0].economic_activity, '製造與銷售');
 assert.equal(outbound.text.format.type, 'json_schema');
 assert.equal(outbound.text.format.strict, true);
 assert.match(outbound.instructions, /不得輸出或猜測 EA、Q\/E\/O 技術類別、風險、複雜度或人天/);
+
+const riskSandbox = {};
+vm.runInNewContext(riskEngineSource, riskSandbox);
+const riskEngine = riskSandbox.RiskEngine;
+assert.equal(riskEngine.riskReferenceClass('20.30','12','ISO 9001','塗料製造'), '12');
+assert.equal(riskEngine.riskReferenceClass('49.41','31','ISO 14001','危險貨物運輸'), '31-3');
+assert.equal(riskEngine.riskReferenceClass('49.41','31','ISO 45001','一般貨物運輸'), '31-2');
+assert.equal(riskEngine.riskReferenceClass('82.92','35','ISO 9001','包裝服務'), '35-1');
+// A changed or fabricated certification category is no longer an input, so it
+// cannot overwrite the risk-workbook reference class.
+assert.equal(riskEngine.riskReferenceClass('20.30','12','ISO 9001','99'), '12');
 delete process.env.OPENAI_API_KEY;
 console.log('Smoke tests passed: syntax, API loading, structured GPT request, secret scan, automatic GPT hook, and offline fallback.');
 
