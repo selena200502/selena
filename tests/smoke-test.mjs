@@ -16,7 +16,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.14 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.15 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -33,6 +33,10 @@ assert.match(html, /FSMS_CATEGORIES/, 'FSMS categories must be an independent co
 assert.match(html, /nace_applicability:'NOT_APPLICABLE'/, 'FSMS must explicitly exclude NACE 2.0');
 assert.match(html, /risk:'高',complexity:'高'/, 'FSMS risk and complexity must both be high');
 assert.match(html, /GPT_ISO_22003_1_WITH_FORMAL_CATEGORY_VALIDATION/, 'FSMS must use GPT ISO 22003-1 classification with formal table validation');
+assert.match(html, /selection_mode:'AUTO_ONLY_READ_ONLY'/, 'FSMS categories must be automatic and read-only');
+assert.match(html, /result\.add\('FI'\)/, 'tea sales guardrail must retain FI alongside processing');
+assert.match(html, /site_stage_1_and_2_sum/, 'FSMS initial total must sum allocated Stage 1 and Stage 2 site days');
+assert.match(html, /annual_addition_days:annual/, 'FSMS yearly P46/P47-style additions must be added to initial total');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
 assert.doesNotMatch(html, /v81RetainGptPreferredScopes\(output,preferred\);if\(preferred\.length\)render\(output\)/, 'GPT Preferred must not erase controlled risk and audit-day sections');
