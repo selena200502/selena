@@ -33,7 +33,7 @@
     return '';
   }
   function technicalReferenceClass(nace,ea,system){
-    return metalReferenceClass(nace,system)||nonMetalReferenceClass(nace,ea,system)||String(ea||'').trim();
+    return riskReferenceClass(nace,ea,system,'');
   }
   function nonMetalReferenceClass(nace,ea,system){
     const code=String(nace||''),formalEa=String(ea||'');
@@ -72,8 +72,11 @@
     if(system==='ISO 45001')return hazardous?'31-1':management?'31-3':'31-2';
     return '';
   }
-  function riskReferenceClass(nace,ea,system,technicalClass,context){
-    return tradeRiskReferenceClass(nace,system)||transportRiskReferenceClass(nace,ea,system,context)||serviceRiskReferenceClass(nace,system)||metalReferenceClass(nace,system)||nonMetalReferenceClass(nace,ea,system)||String(technicalClass||ea||'').trim();
+  function riskReferenceClass(nace,ea,system,context){
+    // This bridge belongs exclusively to the risk workbook.  In particular it
+    // must never accept the certification technical category as a fallback:
+    // identical-looking codes in the two workbooks are independent data.
+    return tradeRiskReferenceClass(nace,system)||transportRiskReferenceClass(nace,ea,system,context)||serviceRiskReferenceClass(nace,system)||metalReferenceClass(nace,system)||nonMetalReferenceClass(nace,ea,system)||String(ea||'').trim();
   }
   return {ORDER,uniqueChoices,selectHighest,metalReferenceClass,nonMetalReferenceClass,technicalReferenceClass,serviceRiskReferenceClass,tradeRiskReferenceClass,transportRiskReferenceClass,riskReferenceClass};
 });

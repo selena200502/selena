@@ -580,25 +580,27 @@ function riskReferenceSuggestion(referenceClass,system){
 }
 // Bridge only: NACE/EA classification identifies the applicable scope. The risk value
 // itself is then read from the independent risk-reference table above.
-function systemRiskSuggestion(nace,system,context){let technicalClass=systemTechnicalClassSuggestion(nace,system),ea=EA_BY_NACE[nace]?.ea,riskContext=context||[document.getElementById('product')?.value||'',document.getElementById('scopeAttributes')?.value||''].join(' '),referenceClass=RISK_REFERENCE_OVERRIDES_BY_NACE[nace]?.[system]||RiskEngine.riskReferenceClass(nace,ea,system,technicalClass,riskContext),reference=riskReferenceSuggestion(referenceClass,system);return reference?[reference.reference_class,reference.risk]:null}
+function systemRiskSuggestion(nace,system,context){let ea=EA_BY_NACE[nace]?.ea,riskContext=context||[document.getElementById('product')?.value||'',document.getElementById('scopeAttributes')?.value||''].join(' '),referenceClass=RISK_REFERENCE_OVERRIDES_BY_NACE[nace]?.[system]||RiskEngine.riskReferenceClass(nace,ea,system,riskContext),reference=riskReferenceSuggestion(referenceClass,system);return reference?[reference.reference_class,reference.risk]:null}
 function selectedSystemRisk(){return document.getElementById('v2RiskClass')?.value||''}
 function refreshSystemRiskClass(){
- let system=document.getElementById('system').value, config=SYSTEM_RISK_OPTIONS[system]||SYSTEM_RISK_OPTIONS['ISO 9001'], select=document.getElementById('v2RiskClass'), sameSystem=!select.dataset.system||select.dataset.system===system, prior=sameSystem?select.value:'', nace=window.last?.nace||'', technicalClass=systemTechnicalClassSuggestion(nace,system), suggestion=systemRiskSuggestion(nace,system), suggested=suggestion?.[1]||'';
+ let system=document.getElementById('system').value, config=SYSTEM_RISK_OPTIONS[system]||SYSTEM_RISK_OPTIONS['ISO 9001'], select=document.getElementById('v2RiskClass'), sameSystem=!select.dataset.system||select.dataset.system===system, prior=sameSystem&&select.dataset.source==='manual'?select.value:'', nace=window.last?.nace||'', suggestion=systemRiskSuggestion(nace,system), suggested=suggestion?.[1]||'';
  document.getElementById('v2RiskLabel').firstChild.textContent=config.label;
  select.innerHTML=config.options.map(value=>'<option value="'+value+'">'+(value||'未指定')+'</option>').join('');
- select.value=config.options.includes(prior)?prior:(config.options.includes(suggested)?suggested:'');
+ select.value=config.options.includes(suggested)?suggested:(config.options.includes(prior)?prior:'');
  select.dataset.system=system;
- document.getElementById('v2RiskHint').textContent=(technicalClass?'分類技術類別 '+technicalClass+' 僅用來定位風險參照欄位'+(suggestion?'；風險值 '+suggestion[1]+' 只由《技術領域-風險分類》及《風險複雜度》交叉取得，不由 NACE／EA 顯示值決定。':'；風險／複雜度尚待獨立資料覆核。'):'尚無可定位的風險參照類別，請依兩份風險資料人工覆核。')+' '+config.note;
+ select.dataset.source=suggestion?'risk-table':(prior?'manual':'');
+ document.getElementById('v2RiskHint').textContent=(suggestion?'風險參照技術領域 '+suggestion[0]+'；風險值 '+suggestion[1]+' 只由《技術領域-風險分類》及《風險複雜度》交叉取得，不讀取分類技術類別。':'尚無可定位的風險參照類別，請依兩份風險資料人工覆核。')+' '+config.note;
 }
 var getInputBeforeSystemRisk=getInput;
 getInput=function(){let d=getInputBeforeSystemRisk(), selected=selectedSystemRisk();if(d.system==='ISO 50001'&&selected)d.complexity=selected;d.system_risk_class=selected;return d;};
 var manualRiskLevelBeforeSystemRisk=manualRiskLevel;
-manualRiskLevel=function(data){let selected=selectedSystemRisk();if(selected){if(selected.endsWith('風險'))return selected.replace('風險','');return selected;}return manualRiskLevelBeforeSystemRisk(data);};
+manualRiskLevel=function(data){let selected=selectedSystemRisk();if(selected){if(selected.endsWith('風險'))return selected.replace('風險','');return selected;}if(['ISO 9001','ISO 14001','ISO 45001'].includes(data.system))return null;return manualRiskLevelBeforeSystemRisk(data);};
 document.getElementById('system').addEventListener('change',refreshSystemRiskClass);
+document.getElementById('v2RiskClass').addEventListener('change',event=>{event.currentTarget.dataset.source='manual';});
 function applySuggestedRiskBeforeCalculation(){
- let select=document.getElementById('v2RiskClass'); if(select.value)return;
+ let select=document.getElementById('v2RiskClass');
  let data=getInput(), candidate=RULES.filter(rule=>!rule.exclude&&matches(rule,data)).sort((a,b)=>b.priority-a.priority)[0], suggestion=systemRiskSuggestion(candidate?.result?.nace||'',data.system)?.[1];
- if(suggestion&&[...select.options].some(option=>option.value===suggestion))select.value=suggestion;
+ if(suggestion&&[...select.options].some(option=>option.value===suggestion)){select.value=suggestion;select.dataset.source='risk-table';}
 }
 var runNaceV2BeforeSystemRisk=runNaceV2;
 runNaceV2=function(){applySuggestedRiskBeforeCalculation();runNaceV2BeforeSystemRisk();refreshSystemRiskClass();let v=window.last?.audit_time_v2;if(v){v.system_risk_class={selected:selectedSystemRisk(),technical_class_source:TECHNICAL_CLASS_SOURCE,risk_source:RISK_CROSS_CHECK_SOURCE};document.getElementById('json').textContent=JSON.stringify(window.last,null,2);}};
@@ -619,7 +621,7 @@ runNace=function(){
  runNaceBeforeMultiScope();
  let output=window.last;if(!output)return;
  let scopes=[], seen=new Set();
- (output.matched_rules||[]).forEach(rule=>{let nace=rule.result?.nace,ea=rule.result?.ea,key=nace+'|'+ea,mappedRisk=systemRiskSuggestion(nace,output.input?.system);if(nace&&ea&&!seen.has(key)){seen.add(key);scopes.push({nace,ea,system_technical_class:rule.result?.system_technical_class||rule.gpt_technical_category||systemTechnicalClassSuggestion(nace,output.input?.system),risk_complexity:mappedRisk?.[1]||'待人工覆核',technical_class_source:rule.gpt_primary?'GPT_PRIMARY':TECHNICAL_CLASS_SOURCE,description:rule.result.definition||EA_BY_NACE[nace]?.definition||'—',rule_id:rule.rule_id,reason:rule.reason});}});
+ (output.matched_rules||[]).forEach(rule=>{let nace=rule.result?.nace,ea=rule.result?.ea,key=nace+'|'+ea,mappedRisk=systemRiskSuggestion(nace,output.input?.system),formalTechnical=systemTechnicalClassSuggestion(nace,output.input?.system);if(nace&&ea&&!seen.has(key)){seen.add(key);scopes.push({nace,ea,system_technical_class:formalTechnical||'待人工覆核',risk_complexity:mappedRisk?.[1]||'待人工覆核',technical_class_source:formalTechnical?TECHNICAL_CLASS_SOURCE:'MANUAL_REVIEW',description:rule.result.definition||EA_BY_NACE[nace]?.definition||'—',rule_id:rule.rule_id,reason:rule.reason});}});
  output.classified_scopes=scopes;
  if(scopes.length>1){
    output.decision='REVIEW';output.confidence=Math.min(output.confidence||68,65);
@@ -683,15 +685,15 @@ function highestScopeRisk(data){
  let exactPool=RULES.filter(rule=>!rule.exclude&&ruleMatchesWholeOrParsedSegment(rule,data)).sort((a,b)=>b.priority-a.priority),exact=resolveQmsEmsOhsmsRuleHits(exactPool,data),allCaseAi=RULES.filter(rule=>rule.ai_generated&&!rule.exclude&&matches(rule,data)),candidates=[...new Map([...allCaseAi,...exact].map(rule=>[rule.result?.nace+'|'+rule.id,rule])).values()];
  if(!candidates.length)candidates=featureNaceCandidates(data).map(item=>({id:item.id,result:{nace:item.nace}}));
   let riskContext=[data.product||'',data.product_attributes||'',...(data.scope_segments||[])].join(' '),rawChoices=candidates.map(rule=>{let mapped=systemRiskSuggestion(rule.result?.nace||'',data.system,riskContext);return mapped?{nace:rule.result.nace,ea:EA_BY_NACE[rule.result.nace]?.ea||'—',technical_class:mapped[0],risk:mapped[1],rule_id:rule.id}:null;}).filter(Boolean),combined=RiskEngine.selectHighest(rawChoices,data.system),choices=combined?.choices||[];
- if(!choices.length&&candidates.length){let rule=candidates[0], nace=rule.result?.nace||'—', ea=EA_BY_NACE[nace]?.ea||'—', technicalClass=systemTechnicalClassSuggestion(nace,data.system)||'EA '+ea+'（技術子類待覆核）', manual=selectedSystemRisk()||'待人工選擇';return {selected:{nace,technical_class:technicalClass,risk:manual,rule_id:rule.id},choices:[],rule:'FALLBACK_NO_RISK_MAPPING'};}
+ if(!choices.length&&candidates.length){let rule=candidates[0], nace=rule.result?.nace||'—', manual=selectedSystemRisk()||'待人工選擇';return {selected:{nace,technical_class:'待人工覆核',risk:manual,rule_id:rule.id},choices:[],rule:'FALLBACK_NO_RISK_TABLE_MAPPING'};}
  if(!choices.length)return null;
  return combined;
 }
 applySuggestedRiskBeforeCalculation=function(){
  let select=document.getElementById('v2RiskClass'), data=getInput(), combined=highestScopeRisk(data);
- if(combined&&[...select.options].some(option=>option.value===combined.selected.risk)){select.value=combined.selected.risk;return;}
+ if(combined&&combined.choices.length&&[...select.options].some(option=>option.value===combined.selected.risk)){select.value=combined.selected.risk;select.dataset.source='risk-table';return;}
  let candidate=RULES.filter(rule=>!rule.exclude&&matches(rule,data)).sort((a,b)=>b.priority-a.priority)[0], suggestion=systemRiskSuggestion(candidate?.result?.nace||'',data.system)?.[1];
- if(suggestion&&[...select.options].some(option=>option.value===suggestion))select.value=suggestion;
+ if(suggestion&&[...select.options].some(option=>option.value===suggestion)){select.value=suggestion;select.dataset.source='risk-table';}
 };
 var runNaceV2BeforeHighestScopeRisk=runNaceV2;
 runNaceV2=function(){
@@ -1146,16 +1148,8 @@ async function v4MaybeUseEnmsChatGPT(output,signature){
 }
 function v4ReplaceAiRules(input,acceptedCandidates){
  for(let index=RULES.length-1;index>=0;index--)if(RULES[index].ai_generated)RULES.splice(index,1);
- let stamp=Date.now(),aiRules=(acceptedCandidates||[]).map((accepted,index)=>({id:'AI-'+stamp+'-'+(index+1),priority:5000-index,ai_generated:true,ai_scope_segment:accepted.scope_segment,conditions:{all:[{field:'ai_case_key',op:'equal',value:input.ai_case_key}]},result:{nace:accepted.nace,ea:accepted.ea||gptTechnicalEa(accepted.gpt_technical_category),system_technical_class:normalizeGptTechnicalCategory(accepted.gpt_technical_category)},gpt_technical_category:normalizeGptTechnicalCategory(accepted.gpt_technical_category),reason:'ChatGPT 語意候選（'+accepted.scope_segment+'）：'+accepted.reason,review:true}));
+ let stamp=Date.now(),aiRules=(acceptedCandidates||[]).map((accepted,index)=>{let formal=EA_BY_NACE[accepted.nace],technical=systemTechnicalClassSuggestion(accepted.nace,input.system);return {id:'AI-'+stamp+'-'+(index+1),priority:5000-index,ai_generated:true,ai_scope_segment:accepted.scope_segment,conditions:{all:[{field:'ai_case_key',op:'equal',value:input.ai_case_key}]},result:{nace:accepted.nace,ea:String(formal?.ea||accepted.ea||''),system_technical_class:technical||'待人工確認'},reason:'ChatGPT 語意候選（'+accepted.scope_segment+'）：'+accepted.reason,review:true};});
  RULES.push(...aiRules);return aiRules;
-}
-function gptTechnicalEa(value){
- let match=String(value||'').toUpperCase().match(/(?:^|[^A-Z0-9])EA\s*0*([1-9]|[1-3][0-9])(?:$|[^0-9])/);
- return match?match[1]:'';
-}
-function normalizeGptTechnicalCategory(value){
- let ea=gptTechnicalEa(value);
- return ea||String(value||'').trim();
 }
 function v4RetainPaintManufacturingAndSales(acceptedCandidates,input){
  let accepted=[...(acceptedCandidates||[])],details=input.scope_segment_details||[],required=[];
@@ -1178,8 +1172,8 @@ function v4RetainExplicitManufacturingAndSales(acceptedCandidates,input){
 }
 function v81RetainGptPreferredScopes(output,preferred){
  (preferred||[]).forEach((item,index)=>{
-  let nace=String(item.nace||'').trim()||'無完全適用 NACE',gptEa=gptTechnicalEa(item.gpt_technical_category),ea=String(item.ea||gptEa||'待人工確認'),technical=normalizeGptTechnicalCategory(item.gpt_technical_category)||item.semantic_classification||'GPT 建議技術類別（待人工確認）';
-  if(!(output.classified_scopes||=[]).some(scope=>scope.nace===nace&&scope.gpt_preferred))output.classified_scopes.push({nace,ea,system_technical_class:technical,gpt_technical_category:technical,description:item.semantic_classification||item.reason,rule_id:'GPT-PREFERRED-'+(index+1),reason:item.reason,activity:item.activity,validation_status:'GPT Preferred',gpt_preferred:true,formal_match:item.formal_match,manual_confirmation_note:'GPT 建議已保留；NACE Rev.2／認證分類表無完全適宜項目，請人工確認。'});
+  let nace=String(item.nace||'').trim()||'無完全適用 NACE',formal=EA_BY_NACE[nace],ea=String(formal?.ea||item.ea||'待人工確認'),technical=systemTechnicalClassSuggestion(nace,output.input.system)||'待人工確認';
+  if(!(output.classified_scopes||=[]).some(scope=>scope.nace===nace&&scope.gpt_preferred))output.classified_scopes.push({nace,ea,system_technical_class:technical,description:formal?.definition||item.semantic_classification||item.reason,rule_id:'GPT-PREFERRED-'+(index+1),reason:item.reason,activity:item.activity,validation_status:'GPT Preferred',gpt_preferred:true,formal_match:item.formal_match,manual_confirmation_note:'GPT NACE 建議已保留；EA 與技術類別只由本機正式表產生，缺表時待人工確認。'});
  });
  if(preferred?.length){output.decision='REVIEW';output.nace=output.classified_scopes[0]?.nace||null;output.ea=output.classified_scopes[0]?.ea||null;output.confidence=Math.max(...preferred.map(item=>Number(item.confidence)||0));}
  return output;
@@ -1187,10 +1181,10 @@ function v81RetainGptPreferredScopes(output,preferred){
 function v81ProjectGptCandidates(output,candidates){
  let projected=[];
  (candidates||[]).forEach((item,index)=>{
-   let formal=EA_BY_NACE[String(item.nace||'')],nace=String(item.nace||'').trim()||'無完全適用 NACE',gptEa=gptTechnicalEa(item.gpt_technical_category),ea=formal?.ea?String(formal.ea):String(item.ea||gptEa||'待人工確認'),exactTechnical=NACE_TECHNICAL_CLASS_BY_SYSTEM[nace]?.[output.input.system]||'',gptTechnical=normalizeGptTechnicalCategory(item.gpt_technical_category)||item.semantic_classification||'';
-  projected.push({nace,ea,system_technical_class:exactTechnical||gptTechnical||'GPT 建議技術類別（待人工確認）',formal_system_technical_class:exactTechnical,gpt_technical_category:gptTechnical,description:formal?.definition||item.semantic_classification||item.reason,rule_id:'GPT-PRIMARY-'+(index+1),reason:item.reason,activity:item.activity,validation_status:item.validation_status||'Manual Review',gpt_primary:true,gpt_preferred:item.validation_status==='GPT Preferred',formal_match:item.formal_match});
+   let formal=EA_BY_NACE[String(item.nace||'')],nace=String(item.nace||'').trim()||'無完全適用 NACE',ea=formal?.ea?String(formal.ea):String(item.ea||'待人工確認'),exactTechnical=NACE_TECHNICAL_CLASS_BY_SYSTEM[nace]?.[output.input.system]||'';
+  projected.push({nace,ea,system_technical_class:exactTechnical||'待人工確認',formal_system_technical_class:exactTechnical,description:formal?.definition||item.semantic_classification||item.reason,rule_id:'GPT-PRIMARY-'+(index+1),reason:item.reason,activity:item.activity,validation_status:item.validation_status||'Manual Review',gpt_primary:true,gpt_preferred:item.validation_status==='GPT Preferred',formal_match:item.formal_match});
  });
-  if(projected.length){output.classified_scopes=projected;output.matched_rules=projected.map((scope,index)=>({rule_id:scope.rule_id,priority:20000-index,reason:scope.reason,result:{nace:scope.nace,ea:scope.ea,definition:scope.description,system_technical_class:scope.system_technical_class},gpt_technical_category:scope.gpt_technical_category,review:scope.validation_status!=='Confirmed',gpt_primary:true,activity:scope.activity,validation_status:scope.validation_status}));output.nace=projected[0].nace;output.ea=projected[0].ea;output.nace_definition=projected[0].description;output.decision=projected.some(scope=>scope.validation_status!=='Confirmed')?'REVIEW':projected.length>1?'CONFLICT':'AUTO';output.confidence=Math.max(...candidates.map(item=>Number(item.confidence)||0));output.classification_source='GPT_PRIMARY';}
+  if(projected.length){output.classified_scopes=projected;output.matched_rules=projected.map((scope,index)=>({rule_id:scope.rule_id,priority:20000-index,reason:scope.reason,result:{nace:scope.nace,ea:scope.ea,definition:scope.description,system_technical_class:scope.system_technical_class},review:scope.validation_status!=='Confirmed',gpt_primary:true,activity:scope.activity,validation_status:scope.validation_status}));output.nace=projected[0].nace;output.ea=projected[0].ea;output.nace_definition=projected[0].description;output.decision=projected.some(scope=>scope.validation_status!=='Confirmed')?'REVIEW':projected.length>1?'CONFLICT':'AUTO';output.confidence=Math.max(...candidates.map(item=>Number(item.confidence)||0));output.classification_source='GPT_PRIMARY';}
  return output;
 }
 async function v4MaybeUseChatGPT(output){
@@ -1212,7 +1206,7 @@ async function v4MaybeUseChatGPT(output){
    let scopeSet=new Set(output.input.scope_segments||[]),candidates=(payload.candidates||[]).map(item=>{let nace=String(item.nace||''),originalScopeSegment=String(item.scope_segment||''),scopeSegment=v4ResolveCandidateScopeSegment(originalScopeSegment,output.input),formal=EA_BY_NACE[nace],detail=(output.input.scope_segment_details||[]).find(row=>row.product===scopeSegment),validation=ActivityEngine.validateCandidate(item,detail,formal);return {...item,nace,original_scope_segment:originalScopeSegment,scope_segment:scopeSegment,scope_segment_reconciled:scopeSegment!==originalScopeSegment,ea:String(formal?.ea||''),ea_source:formal?.formal_source||'',formal_nace_validation:formal?'PASSED':'NOT_EXACT',formal_nace_definition:formal?.definition||'',validation_status:validation.status,validation_reason:validation.reason,activity_compatible:validation.accepted};});
    let rejectedByScopeGuards=candidates.filter(item=>!scopeSet.has(item.scope_segment)||!item.activity_compatible||!v4CandidatePassesScopeGuards(item,output.input)),acceptedCandidates=candidates.filter(item=>scopeSet.has(item.scope_segment)&&item.activity_compatible&&EA_BY_NACE[item.nace]?.ea&&v4CandidatePassesScopeGuards(item,output.input)).map(item=>({...item,gpt_answer_priority:'PRIMARY',formal_adjustment_policy:'VALIDATION_NOT_OVERRIDE',confidence_below_previous_threshold:Number(item.confidence)<55,review_required:item.validation_status!=='Confirmed'})).slice(0,12),outsideSuggestions=(payload.outside_whitelist_suggestions||[]).map(item=>({...item,nace:String(item.nace||''),scope_segment:String(item.scope_segment||'')}));
    acceptedCandidates=v4RetainExplicitManufacturingAndSales(acceptedCandidates,output.input);
-    if(!acceptedCandidates.length){let preferred=candidates.filter(item=>scopeSet.has(item.scope_segment)&&item.activity_compatible&&item.formal_match!=='conflict'&&v4CandidatePassesScopeGuards(item,output.input)&&Boolean(normalizeGptTechnicalCategory(item.gpt_technical_category))).map(item=>({...item,validation_status:'GPT Preferred'}));v81RetainGptPreferredScopes(output,preferred);/* Do not call render() here: it clears the Offline Engine risk/complexity and audit-day sections. */let meta={status:preferred.length?'GPT_PREFERRED':'MANUAL_REVIEW',status_label:preferred.length?'GPT Preferred':'Manual Review',note:preferred.length?'NACE Rev.2／認證分類表無完全適宜項目；保留 GPT 建議供人工確認，同時保留 V8.1.12 Offline Engine 已完成的風險／複雜度與人天結果。':'候選與 scope 活動不一致或存在正式明確衝突；保留既有離線結果供人工覆核。',model:payload.model,candidates:preferred.length?preferred:candidates,rejected_by_scope_guards:rejectedByScopeGuards,outside_whitelist_suggestions:outsideSuggestions,missing_information:payload.missing_information||[]};V4_AI_CACHE.set(signature,meta);v4ApplyCachedMeta(output,meta);return;}
+    if(!acceptedCandidates.length){let preferred=candidates.filter(item=>scopeSet.has(item.scope_segment)&&item.activity_compatible&&item.formal_match!=='conflict'&&v4CandidatePassesScopeGuards(item,output.input)&&Boolean(item.nace)).map(item=>({...item,validation_status:'GPT Preferred'}));v81RetainGptPreferredScopes(output,preferred);/* Do not call render() here: it clears the Offline Engine risk/complexity and audit-day sections. */let meta={status:preferred.length?'GPT_PREFERRED':'MANUAL_REVIEW',status_label:preferred.length?'GPT Preferred':'Manual Review',note:preferred.length?'NACE Rev.2／認證分類表無完全適宜項目；保留 GPT 的 NACE 建議供人工確認；技術類別與風險／複雜度仍只由各自本機資料處理。':'候選與 scope 活動不一致或存在正式明確衝突；保留既有離線結果供人工覆核。',model:payload.model,candidates:preferred.length?preferred:candidates,rejected_by_scope_guards:rejectedByScopeGuards,outside_whitelist_suggestions:outsideSuggestions,missing_information:payload.missing_information||[]};V4_AI_CACHE.set(signature,meta);v4ApplyCachedMeta(output,meta);return;}
   let aiRules=v4ReplaceAiRules(output.input,acceptedCandidates);
   let currentInput=getInput(),pendingTechnical=acceptedCandidates.filter(item=>!systemTechnicalClassSuggestion(item.nace,output.input.system)),manual=acceptedCandidates.some(item=>item.validation_status==='Manual Review'),preferred=acceptedCandidates.some(item=>item.validation_status==='GPT Preferred'),meta={status:'APPLIED',status_label:manual?'Manual Review':preferred?'GPT Preferred':'Confirmed',note:pendingTechnical.length?'GPT 候選已由正式目錄取得 EA；其中 '+pendingTechnical.map(item=>item.nace).join('、')+' 尚無系統技術子類細分，需人工覆核。':'各活動已獨立判定；NACE Rev.2 僅作驗證及 EA 對照，不覆蓋 GPT 語意答案。',model:payload.model,candidates,accepted_candidates:acceptedCandidates,formal_validation:{gpt_answer_priority:'PRIMARY',nace_catalog:'VALIDATION_LAYER',ea_mapping:'FORMAL_ONLY',formal_override_rule:'NO_OVERRIDE_KEEP_GPT_FOR_REVIEW',system_technical_class:pendingTechnical.length?'PENDING_REVIEW':'PASSED',activity_compatibility:'PASSED'},rejected_by_scope_guards:rejectedByScopeGuards,outside_whitelist_suggestions:outsideSuggestions,missing_information:payload.missing_information||[],rule_match_verified:aiRules.every(rule=>matches(rule,currentInput))};
   V4_AI_CACHE.set(signature,meta);runNaceV2();
@@ -1303,7 +1297,7 @@ function normalizeFormalEaForDisplay(output){
  (output.matched_rules||[]).forEach(rule=>{let nace=rule.result?.nace,ea=formalEaValue(nace,rule.result?.ea);if(nace&&ea)rule.result={...rule.result,ea,definition:EA_BY_NACE[nace]?.definition||rule.result?.definition};});
  (output.classified_scopes||[]).forEach(scope=>{let ea=formalEaValue(scope.nace,scope.ea);if(ea)scope.ea=ea;});
  let system=output.input?.system;
- (output.classified_scopes||[]).forEach(scope=>{let exact=NACE_TECHNICAL_CLASS_BY_SYSTEM[String(scope.nace||'')]?.[system]||'';scope.formal_system_technical_class=exact;scope.system_technical_class=exact||scope.gpt_technical_category||scope.system_technical_class||'待人工確認';scope.technical_class_source=exact?'FORMAL_NACE_SYSTEM_MAPPING':scope.gpt_technical_category?'GPT_PRIMARY_MANUAL_REVIEW':'MANUAL_REVIEW';});
+ (output.classified_scopes||[]).forEach(scope=>{let exact=NACE_TECHNICAL_CLASS_BY_SYSTEM[String(scope.nace||'')]?.[system]||'';scope.formal_system_technical_class=exact;scope.system_technical_class=exact||'待人工確認';scope.technical_class_source=exact?'FORMAL_NACE_SYSTEM_MAPPING':'MANUAL_REVIEW';});
  let canonical=(output.classified_scopes||[]).map((scope,index)=>({combination:index+1,scope_segment:scope.scope_segment||'',activity:scope.activity||'',nace:scope.nace,ea:scope.ea,system,technical_class:scope.system_technical_class,technical_class_source:scope.technical_class_source,validation_status:scope.validation_status||'Manual Review'}));
  output.technical_category_combinations=canonical;output.technical_classification={version:'V8.1',source_of_truth:'technical_category_combinations',gpt_priority:'GPT 決定語意活動與 NACE 主候選',nace_validation:'NACE Rev.2 僅驗證候選',system_mapping:'確認 NACE 後依系統正式對應產生技術類別代碼；無對應才保留 GPT 建議並人工確認',combinations:canonical};output.system_technical_class=canonical[0]?.technical_class||'待人工確認';
  return output;
