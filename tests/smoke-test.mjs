@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import handler from '../api/classify.mjs';
+import fsmsHandler from '../api/classify-fsms.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -26,6 +27,10 @@ assert.doesNotMatch(html, /accepted\.gpt_technical_category|item\.gpt_technical_
 assert.match(html, /FALLBACK_NO_RISK_TABLE_MAPPING/, 'missing risk mapping must remain an explicit risk-table review');
 assert.match(html, /calculateAuditV2BeforeFinalScopeHighestRisk/, 'highest final-scope risk must be selected before audit-day calculation');
 assert.match(html, /applied_before_audit_day_lookup:true/, 'JSON must record that highest risk was applied before the audit-day table lookup');
+assert.match(html, /Ds = TD \+ TH × \(HACCP studies - 1\) \+ TFTE/, 'FSMS must use the ISO 22003 Annex B formula');
+assert.match(html, /controlling_category/, 'FSMS must retain the highest-TD controlling category');
+assert.match(html, /FSMS_CATEGORIES/, 'FSMS categories must be an independent controlled dataset');
+assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
 assert.doesNotMatch(html, /v81RetainGptPreferredScopes\(output,preferred\);if\(preferred\.length\)render\(output\)/, 'GPT Preferred must not erase controlled risk and audit-day sections');
 assert.match(api, /process\.env\.OPENAI_API_KEY/);
@@ -93,5 +98,21 @@ const highestOhsms = riskEngine.selectHighest([
 ], 'ISO 45001');
 assert.equal(highestOhsms.selected.risk, '高風險');
 delete process.env.OPENAI_API_KEY;
+statusCode = 0; body = undefined;
+await fsmsHandler({method:'POST',body:{input:{system:'ISO 22000'}}},res);
+assert.equal(statusCode,503);
+process.env.OPENAI_API_KEY = 'test-only-placeholder';
+globalThis.fetch = async (_url, options) => {
+  outbound = JSON.parse(options.body);
+  return {ok:true,async json(){return {model:'test-model',output_text:JSON.stringify({categories:[{code:'CII',scope_segment:'冷藏蔬菜加工',reason:'易腐植物產品加工',evidence:['冷藏','蔬菜加工'],confidence:91,review_required:false},{code:'G',scope_segment:'冷藏運輸',reason:'食品運輸與貯藏',evidence:['冷藏運輸'],confidence:88,review_required:false}],missing_information:[],review_required:false})};}};
+};
+statusCode = 0; body = undefined;
+await fsmsHandler({method:'POST',body:{input:{system:'ISO 22000',product:'冷藏蔬菜加工及冷藏運輸'},allowed_categories:{}}},res);
+assert.equal(statusCode,200);
+assert.deepEqual(body.categories.map(item=>item.code),['CII','G']);
+assert.match(outbound.instructions,/不可依 NACE、EA 或 QMS\/EMS\/OHSMS 技術類別轉換/);
+assert.equal(outbound.text.format.strict,true);
+delete process.env.OPENAI_API_KEY;
 console.log('Smoke tests passed: syntax, API loading, structured GPT request, secret scan, automatic GPT hook, and offline fallback.');
+
 
