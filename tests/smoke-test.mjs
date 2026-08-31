@@ -37,6 +37,7 @@ assert.match(html, /selection_mode:'AUTO_ONLY_READ_ONLY'/, 'FSMS categories must
 assert.match(html, /result\.add\('FI'\)/, 'tea sales guardrail must retain FI alongside processing');
 assert.match(html, /site_stage_1_and_2_sum/, 'FSMS initial total must sum allocated Stage 1 and Stage 2 site days');
 assert.match(html, /annual_addition_days:annual/, 'FSMS yearly P46/P47-style additions must be added to initial total');
+assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
 assert.doesNotMatch(html, /v81RetainGptPreferredScopes\(output,preferred\);if\(preferred\.length\)render\(output\)/, 'GPT Preferred must not erase controlled risk and audit-day sections');
