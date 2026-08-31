@@ -16,7 +16,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.15 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.16 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -37,6 +37,8 @@ assert.match(html, /selection_mode:'AUTO_ONLY_READ_ONLY'/, 'FSMS categories must
 assert.match(html, /result\.add\('FI'\)/, 'tea sales guardrail must retain FI alongside processing');
 assert.match(html, /site_stage_1_and_2_sum/, 'FSMS initial total must sum allocated Stage 1 and Stage 2 site days');
 assert.match(html, /annual_addition_days:annual/, 'FSMS yearly P46/P47-style additions must be added to initial total');
+assert.match(html, /stage2Total=stage2BeforeAnnual\+annual/, 'FSMS yearly initial addition must be allocated to Stage 2 for display');
+assert.match(html, /stage_sum_matches_total:/, 'FSMS JSON must explicitly verify Stage 1 plus Stage 2 equals the initial total');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
