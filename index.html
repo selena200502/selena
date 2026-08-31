@@ -680,17 +680,33 @@ const RISK_ORDER={
  'ISO 50001':{'低':1,'中':2,'高':3},
  'IATF 16949':{'低':1,'中':2,'高':3}
 };
-function highestScopeRisk(data){
+function highestScopeRisk(data,finalScopes=[]){
  if(data.system==='ISO 50001')return null; // EnMS is determined only by its ISO 50003 C-value / technical-domain flow.
  let exactPool=RULES.filter(rule=>!rule.exclude&&ruleMatchesWholeOrParsedSegment(rule,data)).sort((a,b)=>b.priority-a.priority),exact=resolveQmsEmsOhsmsRuleHits(exactPool,data),allCaseAi=RULES.filter(rule=>rule.ai_generated&&!rule.exclude&&matches(rule,data)),candidates=[...new Map([...allCaseAi,...exact].map(rule=>[rule.result?.nace+'|'+rule.id,rule])).values()];
  if(!candidates.length)candidates=featureNaceCandidates(data).map(item=>({id:item.id,result:{nace:item.nace}}));
+ // The final classified scopes are authoritative.  GPT-primary candidates and
+ // post-classification guards can add valid activities that are not represented
+ // by the original offline rule pool; they must participate in the highest-risk
+ // selection before audit days are calculated.
+ let scopeCandidates=(finalScopes||[]).filter(scope=>scope?.nace).map((scope,index)=>({id:scope.rule_id||'FINAL-SCOPE-'+(index+1),result:{nace:String(scope.nace)}}));
+ candidates=[...new Map([...scopeCandidates,...candidates].map(rule=>[String(rule.result?.nace||''),rule])).values()];
   let riskContext=[data.product||'',data.product_attributes||'',...(data.scope_segments||[])].join(' '),rawChoices=candidates.map(rule=>{let mapped=systemRiskSuggestion(rule.result?.nace||'',data.system,riskContext);return mapped?{nace:rule.result.nace,ea:EA_BY_NACE[rule.result.nace]?.ea||'—',technical_class:mapped[0],risk:mapped[1],rule_id:rule.id}:null;}).filter(Boolean),combined=RiskEngine.selectHighest(rawChoices,data.system),choices=combined?.choices||[];
  if(!choices.length&&candidates.length){let rule=candidates[0], nace=rule.result?.nace||'—', manual=selectedSystemRisk()||'待人工選擇';return {selected:{nace,technical_class:'待人工覆核',risk:manual,rule_id:rule.id},choices:[],rule:'FALLBACK_NO_RISK_TABLE_MAPPING'};}
  if(!choices.length)return null;
  return combined;
 }
+var calculateAuditV2BeforeFinalScopeHighestRisk=calculateAuditV2;
+calculateAuditV2=function(data,baseAudit){
+ let finalScopes=window.last?.input===data?(window.last.classified_scopes||[]):[],combined=highestScopeRisk(data,finalScopes),select=document.getElementById('v2RiskClass');
+ if(['ISO 9001','ISO 14001','ISO 45001'].includes(data.system)&&combined?.choices?.length&&[...select.options].some(option=>option.value===combined.selected.risk)){
+  select.value=combined.selected.risk;select.dataset.source='highest-risk-table';data.system_risk_class=combined.selected.risk;
+ }
+ let result=calculateAuditV2BeforeFinalScopeHighestRisk(data,baseAudit);
+ if(combined?.choices?.length)result.precalculation_highest_risk={selected:combined.selected.risk,risk_reference_class:combined.selected.technical_class,basis_nace:combined.selected.nace,all_scope_candidates:combined.choices,applied_before_audit_day_lookup:true};
+ return result;
+};
 applySuggestedRiskBeforeCalculation=function(){
- let select=document.getElementById('v2RiskClass'), data=getInput(), combined=highestScopeRisk(data);
+ let select=document.getElementById('v2RiskClass'), data=getInput(), combined=highestScopeRisk(data,window.last?.classified_scopes||[]);
  if(combined&&combined.choices.length&&[...select.options].some(option=>option.value===combined.selected.risk)){select.value=combined.selected.risk;select.dataset.source='risk-table';return;}
  let candidate=RULES.filter(rule=>!rule.exclude&&matches(rule,data)).sort((a,b)=>b.priority-a.priority)[0], suggestion=systemRiskSuggestion(candidate?.result?.nace||'',data.system)?.[1];
  if(suggestion&&[...select.options].some(option=>option.value===suggestion)){select.value=suggestion;select.dataset.source='risk-table';}
@@ -698,7 +714,7 @@ applySuggestedRiskBeforeCalculation=function(){
 var runNaceV2BeforeHighestScopeRisk=runNaceV2;
 runNaceV2=function(){
  runNaceV2BeforeHighestScopeRisk();
- let v=window.last?.audit_time_v2, combined=window.last?.input?highestScopeRisk(window.last.input):null;
+ let v=window.last?.audit_time_v2, combined=window.last?.input?highestScopeRisk(window.last.input,window.last.classified_scopes||[]):null;
  if(v&&combined){v.technical_category_combinations=(window.last.classified_scopes||[]).map((scope,index)=>({combination:index+1,nace:scope.nace,ea:scope.ea,technical_class:scope.system_technical_class||'待人工覆核',risk_complexity:scope.risk_complexity||systemRiskSuggestion(scope.nace,window.last.input.system)?.[1]||'待人工覆核'}));v.system_risk_class={selected:combined.selected.risk,risk_reference_class:combined.selected.technical_class,basis_nace:combined.selected.nace,all_scope_candidates:combined.choices,selection_rule:'風險／複雜度另依《技術領域-風險分類》與《風險複雜度》逐一比對各已確認活動，採最高等級作為人天計算依據；不會回寫、變更或反推技術類別的 NACE／EA。',rule:combined.rule,technical_class_source:TECHNICAL_CLASS_SOURCE,risk_source:RISK_CROSS_CHECK_SOURCE,source_separation_note:'技術類別 NACE／EA 與風險／複雜度為獨立流程；NACE／EA 僅用於保留活動追溯，風險值只取自兩份風險參照資料。',risk_cross_check:{technical_area_risk_source:'技術領域-風險分類.xlsx',complexity_source:'風險複雜度.xlsx'}};if(v.table_lookup){v.table_lookup.risk=combined.selected.risk+'（風險參照 '+combined.selected.technical_class+'；多範圍採最高）';v.table_lookup.risk_reference_class=combined.selected.technical_class;}let basis='已依風險參照技術領域比對 '+combined.choices.map(item=>item.technical_class+'／'+item.risk).join('；')+'；採最高的 <b>'+combined.selected.risk+'</b>（風險參照技術領域 '+combined.selected.technical_class+'）查人天表。';let root=document.getElementById('result'),mainHeading=[...root.querySelectorAll('h3')].find(item=>item.textContent.startsWith('人天 V2：')),stageHeading=[...root.querySelectorAll('h3')].find(item=>item.textContent==='人天 V2 稽核階段人天');if(mainHeading)mainHeading.insertAdjacentHTML('afterend','<p class="small risk-basis"><b>風險／複雜度人天依據：</b>'+basis+'</p>');if(stageHeading)stageHeading.insertAdjacentHTML('afterend','<p class="small risk-basis"><b>稽核階段人天依據：</b>'+basis+'</p>');root.insertAdjacentHTML('beforeend','<p class="small"><b>多範圍人天依據：</b>'+basis+'</p>');document.getElementById('json').textContent=JSON.stringify(window.last,null,2);}
 };
 // Readable result layout: the decision and audit basis stay at the top; explanations stay below.

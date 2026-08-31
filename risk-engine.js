@@ -19,7 +19,7 @@
     const unique=uniqueChoices(choices),ranks=ORDER[system]||{};
     if(!unique.length)return null;
     const selected=unique.reduce((highest,item)=>(ranks[item.risk]||0)>(ranks[highest.risk]||0)?item:highest);
-    return {selected,choices:unique,rule:'所有已保留技術類別逐一查風險參照表，採最高等級作為人天查表依據。'};
+    return {selected,choices:unique,rule:'所有最終保留活動範圍逐一查風險參照表，先採最高等級，再進入人天查表。'};
   }
   function metalReferenceClass(nace,system){
     const code=String(nace||'');
