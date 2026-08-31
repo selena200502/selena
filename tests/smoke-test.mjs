@@ -24,6 +24,9 @@ assert.doesNotMatch(html, /RiskEngine\.riskReferenceClass\([^\n]*technicalClass/
 assert.doesNotMatch(api, /gpt_technical_category/, 'GPT response schema must not return a technical category');
 assert.doesNotMatch(html, /accepted\.gpt_technical_category|item\.gpt_technical_category|scope\.gpt_technical_category|rule\.gpt_technical_category/, 'GPT mapping must not write or provide a fallback technical category');
 assert.match(html, /FALLBACK_NO_RISK_TABLE_MAPPING/, 'missing risk mapping must remain an explicit risk-table review');
+assert.match(html, /calculateAuditV2BeforeFinalScopeHighestRisk/, 'highest final-scope risk must be selected before audit-day calculation');
+assert.match(html, /applied_before_audit_day_lookup:true/, 'JSON must record that highest risk was applied before the audit-day table lookup');
+assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
 assert.doesNotMatch(html, /v81RetainGptPreferredScopes\(output,preferred\);if\(preferred\.length\)render\(output\)/, 'GPT Preferred must not erase controlled risk and audit-day sections');
 assert.match(api, /process\.env\.OPENAI_API_KEY/);
 assert.doesNotMatch(html + ui + api, /sk-[A-Za-z0-9_-]{12,}/);
@@ -71,6 +74,24 @@ assert.equal(riskEngine.riskReferenceClass('82.92','35','ISO 9001','包裝服務
 // A changed or fabricated certification category is no longer an input, so it
 // cannot overwrite the risk-workbook reference class.
 assert.equal(riskEngine.riskReferenceClass('20.30','12','ISO 9001','99'), '12');
+const highestQms = riskEngine.selectHighest([
+  {nace:'46.75',technical_class:'29',risk:'低風險'},
+  {nace:'20.30',technical_class:'12',risk:'高風險'},
+  {nace:'22.21',technical_class:'14',risk:'中風險'}
+], 'ISO 9001');
+assert.equal(highestQms.selected.risk, '高風險');
+const highestEms = riskEngine.selectHighest([
+  {nace:'49.41',technical_class:'31-2',risk:'有限'},
+  {nace:'20.30',technical_class:'12',risk:'高風險'},
+  {nace:'22.21',technical_class:'14',risk:'低風險'}
+], 'ISO 14001');
+assert.equal(highestEms.selected.risk, '高風險');
+const highestOhsms = riskEngine.selectHighest([
+  {nace:'46.75',technical_class:'29-2',risk:'低風險'},
+  {nace:'20.30',technical_class:'12',risk:'高風險'},
+  {nace:'22.21',technical_class:'14',risk:'中風險'}
+], 'ISO 45001');
+assert.equal(highestOhsms.selected.risk, '高風險');
 delete process.env.OPENAI_API_KEY;
 console.log('Smoke tests passed: syntax, API loading, structured GPT request, secret scan, automatic GPT hook, and offline fallback.');
 
