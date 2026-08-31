@@ -5,19 +5,19 @@
   document.head.appendChild(style);
   const mode = document.createElement('div');
   mode.className = 'deployment-mode';
-  mode.innerHTML = '<span id="deploymentMode">正在檢查 GPT 服務…</span><p class="small" id="deploymentModeNote">若 API 不可用，系統會自動保留並顯示 V8.1.13 離線結果。</p>';
+  mode.innerHTML = '<span id="deploymentMode">正在檢查 GPT 服務…</span><p class="small" id="deploymentModeNote">若 API 不可用，系統會自動保留並顯示 V8.1.14 離線結果。</p>';
   document.querySelector('header').after(mode);
-  document.title = '驗證範圍 GPT 混合引擎 — V8.1.13 R3';
-  document.querySelector('header p').textContent = 'V8.1.13 R3｜Offline Engine 先行＋GPT NACE／FSMS 主判定＋本地受控驗證';
+  document.title = '驗證範圍 GPT 混合引擎 — V8.1.14 R3';
+  document.querySelector('header p').textContent = 'V8.1.14 R3｜Q/E/O 採 GPT NACE；FSMS 採 GPT ISO 22003-1 食品鏈類別';
   function showOnline() {
     mode.classList.add('online');
-    document.querySelector('#deploymentMode').textContent = 'GPT Online + V8.1.13 Validation';
-    document.querySelector('#deploymentModeNote').textContent = '已先完成本地離線判定，再由 GPT 提出 NACE／FSMS 語意主候選，最後由 V8.1.13 受控規則驗證技術類別、風險與人天。';
+    document.querySelector('#deploymentMode').textContent = 'GPT Online + V8.1.14 Validation';
+    document.querySelector('#deploymentModeNote').textContent = 'QMS／EMS／OHSMS 使用 NACE 驗證；FSMS 只使用 ISO 22003-1 Food Chain Category 與 FSMS 認證分類表。';
   }
   function showFallback() {
     mode.classList.remove('online');
     document.querySelector('#deploymentMode').textContent = 'Offline Fallback';
-    document.querySelector('#deploymentModeNote').textContent = '線上判定目前不可用；畫面保留 V8.1.13 Offline Engine 結果，可繼續使用並交由人工覆核。';
+    document.querySelector('#deploymentModeNote').textContent = '線上判定目前不可用；畫面保留 V8.1.14 Offline Engine 結果，可繼續使用並交由人工覆核。';
   }
   window.r3EnsureApiReady = async function () {
     if (location.protocol === 'file:') {
