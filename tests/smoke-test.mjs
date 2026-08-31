@@ -16,7 +16,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.13 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.14 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -30,6 +30,9 @@ assert.match(html, /applied_before_audit_day_lookup:true/, 'JSON must record tha
 assert.match(html, /Ds = TD \+ TH × \(HACCP studies - 1\) \+ TFTE/, 'FSMS must use the ISO 22003 Annex B formula');
 assert.match(html, /controlling_category/, 'FSMS must retain the highest-TD controlling category');
 assert.match(html, /FSMS_CATEGORIES/, 'FSMS categories must be an independent controlled dataset');
+assert.match(html, /nace_applicability:'NOT_APPLICABLE'/, 'FSMS must explicitly exclude NACE 2.0');
+assert.match(html, /risk:'高',complexity:'高'/, 'FSMS risk and complexity must both be high');
+assert.match(html, /GPT_ISO_22003_1_WITH_FORMAL_CATEGORY_VALIDATION/, 'FSMS must use GPT ISO 22003-1 classification with formal table validation');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
 assert.doesNotMatch(html, /v81RetainGptPreferredScopes\(output,preferred\);if\(preferred\.length\)render\(output\)/, 'GPT Preferred must not erase controlled risk and audit-day sections');
