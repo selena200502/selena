@@ -68,6 +68,7 @@ assert.match(fsmsApi, /菇蕈菌種之培養.*K/, 'GPT must retain the ISO 22003
 assert.match(html, /directHealthFood/, 'ambient ready-to-eat health food must prefer CIV over K');
 assert.match(fsmsApi, /保健食品（牛樟芝）之生產.*CIV/, 'GPT must classify direct-consumption Antrodia health food as CIV');
 assert.match(html, /stage1=1\.5/, 'IATF Stage 1 must be fixed at 1.5 MD');
+assert.match(html, /stage1Input\.disabled=rule\.key==='IATF'/, 'IATF Stage 1 override must be disabled in the UI');
 assert.match(html, /designFactor=hasDesign\?1:\.85/, 'IATF Rule 6 must apply 0.85 when design is absent');
 assert.match(html, /stage2Base=iatfRule6Days\(s2\[2\],designFactor\)/, 'IATF design factor must apply to Stage 2');
 assert.match(html, /surveillanceBase=iatfRule6Days\(s2\[3\],designFactor\)/, 'IATF design factor must apply to surveillance');
