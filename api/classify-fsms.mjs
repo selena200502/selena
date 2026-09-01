@@ -35,9 +35,11 @@ export default async function handler(req,res) {
       '依實際產品、製程、保存條件、服務及在食品鏈中的角色作實質判定，不可依 NACE、EA 或 QMS/EMS/OHSMS 技術類別轉換。',
       '同一驗證範圍可有多個適用類別，必須全部分列；不得為了人天只留下單一類別。',
       'C0 是動物屠宰等初級轉換；CI 是易腐動物產品；CII 是易腐植物產品；CIII 是易腐混合產品；CIV 是常溫穩定食品。',
+      '冷凍或冷藏只是保存條件，不可看到「調理食品」就歸 CIV。冷凍／冷藏食品屬易腐產品，必須依實際原料組成判定：動物性為 CI、植物性為 CII、同時含動植物或完整混合餐食為 CIII；冷凍／冷藏食品不得回傳 CIV。',
+      '判定優先序與 QMS／EMS／OHSMS 的 GPT-first 原則一致：先依完整語意提出 Food Chain Category，再用 ISO 22003-1 Annex A 與 FSMS 認證分類表確認。若正式表沒有完全相同的產品字眼但沒有類別定義衝突，保留 GPT 最合理建議並標示需人工覆核，不得改套近似類別。',
       'FI 是實體零售/批發，FII 是不實際持有產品的經紀/交易；G 運輸貯藏；H 支援服務；I 包材；J 設備；K 化學/生化投入物。',
       '茶葉製造、調製或加工屬常溫穩定食品加工 CIV；同一範圍另有茶葉銷售、零售或批發時，必須另外保留 FI，因此「茶葉之加工、銷售」至少回傳 CIV 與 FI，不得只回傳其中一項。',
-      '若資訊不足仍選最合理候選，但 review_required=true 並列出缺少的保存條件、製程或產品用途。',
+      '若冷凍調理食品未說明動物性、植物性或混合原料，應以產品語意提出 CI／CII／CIII 中最合理候選，review_required=true，並在 missing_information 要求確認主要原料組成；絕不可用 CIV 代替。',
       'allowed_categories 是正式定義來源；不要輸出風險、複雜度、NACE、EA 或人天。'
     ].join('\n');
     const apiResponse=await fetch(OPENAI_URL,{method:'POST',headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,instructions,input:JSON.stringify(payload),text:{format:{type:'json_schema',name:'fsms_classification',strict:true,schema}}})});
