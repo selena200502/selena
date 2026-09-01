@@ -17,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.21 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.22 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -61,6 +61,8 @@ assert.match(fsmsApi, /水產品的「初級改製／初級轉換」/, 'GPT must
 assert.match(html, /explicitPrimaryAndProcessing=/, 'explicit primary conversion and processing wording must be treated as two activities');
 assert.match(html, /aquaticFurther=explicitPrimaryAndProcessing\|\|/, 'explicit processing after primary conversion must retain CI');
 assert.match(fsmsApi, /初級改製及加工/, 'GPT must return C0 plus CI when both activities are explicit');
+assert.match(html, /primaryPlantHandling/, 'raw plant cleaning, grading and packing must remain BIII');
+assert.match(fsmsApi, /地瓜.*BIII/, 'GPT must classify unchanged sweet-potato cleaning, grading and packing as BIII');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
