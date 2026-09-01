@@ -17,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.18 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.19 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -49,6 +49,11 @@ assert.match(fsmsApi, /不可因資訊不足就把三者全部列為適用類別
 assert.match(html, /ingredientText=text\.replace\(\/蛋糕\/g,''\)/, 'cake wording must not be treated as proof of an animal-only product');
 assert.match(html, /if\(!ambient\)result\.delete\('CIV'\)/, 'CIV must remain when a scope contains separate ambient products');
 assert.match(fsmsApi, /冷藏蛋糕、常溫蛋糕與餅乾之生產/, 'GPT prompt must preserve CIII plus CIV for mixed storage-condition cake and biscuit scope');
+assert.match(html, /multiProduct=segments\.length>1/, 'numbered FSMS products must be classified independently before union');
+assert.match(html, /segmentCold&&segmentPlant\)result\.add\('CII'\)/, 'chilled vegetables must retain CII');
+assert.match(html, /segmentCold&&segmentAnimal\)result\.add\('CI'\)/, 'frozen meat must retain CI');
+assert.match(html, /加工品[|)]/, 'frozen processed products must retain CIII');
+assert.match(html, /配送\|運輸\|倉儲\|貯藏/, 'distribution must retain G');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
