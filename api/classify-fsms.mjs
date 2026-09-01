@@ -46,6 +46,7 @@ export default async function handler(req,res) {
       '水產品的「初級改製／初級轉換」若是屠宰、放血、去頭、去內臟、去鱗、剝皮、分切、取肉、清洗或為保存而急速冷凍，且未製成調味或熟製食品，屬 C0 動物初級轉換；不得只因「冷凍水產品」就改判 CI。若同一範圍另有醃漬、調味、混合、熟製、煙燻、罐製或製成其他食品等後續加工，該後續產品另判 CI，可形成 C0 + CI。',
       '語句明列「初級改製及加工」或「初級改製與加工」時，視為初級改製與後續加工兩項活動，必須回傳 C0 + CI；不得把「及加工」省略或當成初級改製的同義詞。只有單純寫初級改製，或只列去頭、去內臟、分切、取肉、清洗、急凍等初級處理時，才只回傳 C0。',
       '農產品、蔬菜、水果、根莖作物（例如地瓜）若僅進行清洗、挑選／分級、整理與包裝，且產品仍維持原始狀態，屬 BIII 植物產品前處理，不是 CII。只有切割、截切、去皮、磨碎、加熱、烹煮、調味、乾燥、冷凍或其他改變原始狀態的加工，才依產品性質評估 CII。',
+      '菇蕈相關範圍必須依活動逐項判定：「食藥用菇蕈菌種之培養」屬 K；「食藥用菇蕈生產包之生產」屬 BI；「新鮮菇之生產、分級及包裝」同時屬 BI（生產／種植）與 BIII（分級及包裝前處理）。三項同列時必須回傳 K + BI + BIII，不得合併或遺漏。',
       'allowed_categories 是正式定義來源；不要輸出風險、複雜度、NACE、EA 或人天。'
     ].join('\n');
     const apiResponse=await fetch(OPENAI_URL,{method:'POST',headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,instructions,input:JSON.stringify(payload),text:{format:{type:'json_schema',name:'fsms_classification',strict:true,schema}}})});
