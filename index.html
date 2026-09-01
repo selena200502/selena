@@ -1077,7 +1077,7 @@ runNaceV2=function(){
  let md5=audit.md5_risk_cross_check, md5Text=md5?'<br><b>MD5 交叉檢核：</b>'+md5.note+(md5.factors.length?' '+md5.factors.join('；'):' 已完成基本檢核，未發現額外輸入考量因素。'):'';
  let comparisonText=isEnms?'EnMS 以 ISO 50003 C 值與 EnMS 專用表計算，不套用 EMS／OH&SMS 的複雜度表。':(comparison.length?'已依《技術領域-風險分類》與《風險複雜度》比較：'+comparison.map(item=>'技術領域 '+item.technical_class+'（'+item.risk+'）').join('、')+'；採最高風險／複雜度。NACE／EA 僅保留於技術類別區，並不參與風險值計算。':'本案尚無完整風險對照，請依兩份風險工作表交叉覆核。')+md5Text;
  let stageMinimum=audit.initial_certification?.minimum_stage_requirement, dayBasis=(isEnms?'ISO 50003／EnMS 專用人天表（不以初次驗證 × 1/3、× 2/3 推算）。':output.input.system+'：依技術領域-風險分類.xlsx 與風險複雜度.xlsx 的交叉比對結果，再查系統專用人天表。')+(stageMinimum?.adjusted?' '+stageMinimum.adjustment_reason:'');
- root.insertAdjacentHTML('afterbegin','<section class="decision-overview"><h3>判定摘要 <span class="small">V8.1.20</span></h3><span class="status '+output.decision+'">'+output.decision+'</span><div class="overview-grid"><div class="overview-block"><h4>'+technicalHeading+'</h4>'+scopeRows+'</div><div class="overview-block"><h4>2. 複雜度／風險（採最高）</h4><p><span class="calculated-risk">'+complexityText+'</span></p><p class="overview-note">'+comparisonText+'</p></div><div class="overview-block"><h4>3. 人天</h4><p>初次驗證 <span class="calculated-md">'+initial+' MD</span></p><p class="overview-note">'+dayBasis+'</p><div class="audit-stages"><span>Stage 1 <b class="calculated-md">'+stage1+' MD</b></span><span>Stage 2 <b class="calculated-md">'+stage2+' MD</b></span><span>追查 1 <b class="calculated-md">'+s1+' MD</b></span><span>追查 2 <b class="calculated-md">'+s2+' MD</b></span><span>重新驗證 <b class="calculated-md">'+recert+' MD</b></span></div></div></div></section>');
+ root.insertAdjacentHTML('afterbegin','<section class="decision-overview"><h3>判定摘要 <span class="small">V8.1.21</span></h3><span class="status '+output.decision+'">'+output.decision+'</span><div class="overview-grid"><div class="overview-block"><h4>'+technicalHeading+'</h4>'+scopeRows+'</div><div class="overview-block"><h4>2. 複雜度／風險（採最高）</h4><p><span class="calculated-risk">'+complexityText+'</span></p><p class="overview-note">'+comparisonText+'</p></div><div class="overview-block"><h4>3. 人天</h4><p>初次驗證 <span class="calculated-md">'+initial+' MD</span></p><p class="overview-note">'+dayBasis+'</p><div class="audit-stages"><span>Stage 1 <b class="calculated-md">'+stage1+' MD</b></span><span>Stage 2 <b class="calculated-md">'+stage2+' MD</b></span><span>追查 1 <b class="calculated-md">'+s1+' MD</b></span><span>追查 2 <b class="calculated-md">'+s2+' MD</b></span><span>重新驗證 <b class="calculated-md">'+recert+' MD</b></span></div></div></div></section>');
  if(isEnms){let legacyMetric=[...root.querySelectorAll('.metric')].find(metric=>!metric.closest('.decision-overview'));if(legacyMetric){let labels=legacyMetric.querySelectorAll('.small');if(labels[0])labels[0].textContent='NACE（輔助參考）';if(labels[1])labels[1].textContent='EA（輔助參考；非 EnMS 技術領域）';}}
  document.getElementById('json').textContent=JSON.stringify(output,null,2);
 };
@@ -1147,7 +1147,7 @@ async function v4MaybeUseEnmsChatGPT(output,signature){
  if(!domainResult)return;
  if(formalCandidates.length===1){let meta={status:'RULE_ONLY',status_label:'EnMS 正式資料已完成判定',note:'已有單一技術領域候選，未送交 ChatGPT；C 值、複雜度及人天均由 EnMS 專用規則另行處理。',candidates:[]};V4_AI_CACHE.set(signature,meta);v4ApplyCachedMeta(output,meta);return;}
  let cached=V4_AI_CACHE.get(signature);if(cached){v4ApplyCachedMeta(output,cached);return;}
- let webMeta={status:'RULE_ONLY',status_label:'EnMS 使用 V8.1.20 本地規則',note:'WEB R3 不呼叫未部署的 EnMS API；保留正式資料、客戶案例與人工覆核，C 值、複雜度及人天不受影響。',candidates:[]};V4_AI_CACHE.set(signature,webMeta);v4ApplyCachedMeta(output,webMeta);return;
+ let webMeta={status:'RULE_ONLY',status_label:'EnMS 使用 V8.1.21 本地規則',note:'WEB R3 不呼叫未部署的 EnMS API；保留正式資料、客戶案例與人工覆核，C 值、複雜度及人天不受影響。',candidates:[]};V4_AI_CACHE.set(signature,webMeta);v4ApplyCachedMeta(output,webMeta);return;
  v4ApplyCachedMeta(output,{status:'PENDING',status_label:'正在補強 EnMS 技術領域語意',note:'只分析技術領域；不會判定或改動 C 值、複雜度及人天。',candidates:[]});
  try{
   let input={product:output.input.product,product_attributes:output.input.product_attributes,category:output.input.category,activities:output.input.activities};
@@ -1226,7 +1226,7 @@ async function v4MaybeUseChatGPT(output){
   let aiRules=v4ReplaceAiRules(output.input,acceptedCandidates);
   let currentInput=getInput(),pendingTechnical=acceptedCandidates.filter(item=>!systemTechnicalClassSuggestion(item.nace,output.input.system)),manual=acceptedCandidates.some(item=>item.validation_status==='Manual Review'),preferred=acceptedCandidates.some(item=>item.validation_status==='GPT Preferred'),meta={status:'APPLIED',status_label:manual?'Manual Review':preferred?'GPT Preferred':'Confirmed',note:pendingTechnical.length?'GPT 候選已由正式目錄取得 EA；其中 '+pendingTechnical.map(item=>item.nace).join('、')+' 尚無系統技術子類細分，需人工覆核。':'各活動已獨立判定；NACE Rev.2 僅作驗證及 EA 對照，不覆蓋 GPT 語意答案。',model:payload.model,candidates,accepted_candidates:acceptedCandidates,formal_validation:{gpt_answer_priority:'PRIMARY',nace_catalog:'VALIDATION_LAYER',ea_mapping:'FORMAL_ONLY',formal_override_rule:'NO_OVERRIDE_KEEP_GPT_FOR_REVIEW',system_technical_class:pendingTechnical.length?'PENDING_REVIEW':'PASSED',activity_compatibility:'PASSED'},rejected_by_scope_guards:rejectedByScopeGuards,outside_whitelist_suggestions:outsideSuggestions,missing_information:payload.missing_information||[],rule_match_verified:aiRules.every(rule=>matches(rule,currentInput))};
   V4_AI_CACHE.set(signature,meta);runNaceV2();
-  }catch(error){console.warn('R3 GPT classification unavailable.',error);let meta={status:'UNAVAILABLE',status_label:'Offline Fallback',note:'線上語意判定目前未完成；已保留 V8.1.20 Offline Engine 結果，請由審查人員覆核。',candidates:[],classification_not_executed:true};output.gpt_execution_status=meta.status;output.decision='REVIEW';output.warnings=[meta.note,...(output.warnings||[])];V4_AI_CACHE.set(signature,meta);render(output);window.last=output;v4ApplyCachedMeta(output,meta);}
+  }catch(error){console.warn('R3 GPT classification unavailable.',error);let meta={status:'UNAVAILABLE',status_label:'Offline Fallback',note:'線上語意判定目前未完成；已保留 V8.1.21 Offline Engine 結果，請由審查人員覆核。',candidates:[],classification_not_executed:true};output.gpt_execution_status=meta.status;output.decision='REVIEW';output.warnings=[meta.note,...(output.warnings||[])];V4_AI_CACHE.set(signature,meta);render(output);window.last=output;v4ApplyCachedMeta(output,meta);}
 }
 var runNaceV2BeforeV4Hybrid=runNaceV2;
 runNaceV2=function(){runNaceV2BeforeV4Hybrid();let output=window.last;if(output)setTimeout(()=>v4MaybeUseChatGPT(output),0);};
@@ -1419,6 +1419,7 @@ runNaceV2=function(){
 </script>
 <script src="build-ui.js"></script>
 </body></html>
+
 
 
 
