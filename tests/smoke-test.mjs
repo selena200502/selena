@@ -9,6 +9,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'build-ui.js'), 'utf8');
 const api = fs.readFileSync(path.join(root, 'api/classify.mjs'), 'utf8');
+const fsmsApi = fs.readFileSync(path.join(root, 'api/classify-fsms.mjs'), 'utf8');
 const riskEngineSource = fs.readFileSync(path.join(root, 'risk-engine.js'), 'utf8');
 for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
   if (match[1].trim()) new vm.Script(match[1]);
@@ -16,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.16 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.17 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -39,6 +40,10 @@ assert.match(html, /site_stage_1_and_2_sum/, 'FSMS initial total must sum alloca
 assert.match(html, /annual_addition_days:annual/, 'FSMS yearly P46/P47-style additions must be added to initial total');
 assert.match(html, /stage2Total=stage2BeforeAnnual\+annual/, 'FSMS yearly initial addition must be allocated to Stage 2 for display');
 assert.match(html, /stage_sum_matches_total:/, 'FSMS JSON must explicitly verify Stage 1 plus Stage 2 equals the initial total');
+assert.match(html, /if\(cold\)\{result\.delete\('CIV'\)/, 'frozen or chilled food must never remain CIV');
+assert.match(html, /if\(animal&&plant\)result\.add\('CIII'\)/, 'mixed frozen food must map to CIII');
+assert.match(fsmsApi, /冷凍／冷藏食品不得回傳 CIV/, 'GPT must classify frozen food by CI/CII/CIII product composition');
+assert.match(fsmsApi, /正式表沒有完全相同的產品字眼但沒有類別定義衝突，保留 GPT 最合理建議/, 'FSMS formal lookup must validate rather than override GPT when wording is absent');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
