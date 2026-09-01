@@ -17,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.25 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.26 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -70,9 +70,11 @@ assert.match(fsmsApi, /保健食品（牛樟芝）之生產.*CIV/, 'GPT must cla
 assert.match(html, /stage1=1\.5/, 'IATF Stage 1 must be fixed at 1.5 MD');
 assert.match(html, /stage1Input\.disabled=rule\.key==='IATF'/, 'IATF Stage 1 override must be disabled in the UI');
 assert.match(html, /designFactor=hasDesign\?1:\.85/, 'IATF Rule 6 must apply 0.85 when design is absent');
-assert.match(html, /stage2Base=iatfRule6Days\(s2\[2\],designFactor\)/, 'IATF design factor must apply to Stage 2');
-assert.match(html, /surveillanceBase=iatfRule6Days\(s2\[3\],designFactor\)/, 'IATF design factor must apply to surveillance');
-assert.match(html, /recertBase=iatfRule6Days\(recert\[2\],designFactor\)/, 'IATF design factor must apply to recertification');
+assert.match(html, /iaCalc=iatfRule6Calculation\(s2\[2\],'IA'/, 'IATF Rule 6 calculation chain must apply to Stage 2');
+assert.match(html, /saCalc=iatfRule6Calculation\(s2\[3\],'SA'/, 'IATF Rule 6 calculation chain must apply to surveillance');
+assert.match(html, /raCalc=iatfRule6Calculation\(recert\[2\],'RA'/, 'IATF Rule 6 calculation chain must apply to recertification');
+assert.match(html, /roundedBaseDays=roundUpHalf\(reducedAuditDays\)/, 'IATF reduced base days must round upward to 0.5 MD');
+assert.match(html, /totalAuditHours=roundedBaseDays\*8\+ncAdditionalHours\+otherHours/, 'IATF NC and other hours must be added after base-day rounding');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
@@ -158,6 +160,7 @@ assert.match(outbound.instructions,/不可依 NACE、EA 或 QMS\/EMS\/OHSMS 技�
 assert.equal(outbound.text.format.strict,true);
 delete process.env.OPENAI_API_KEY;
 console.log('Smoke tests passed: syntax, API loading, structured GPT request, secret scan, automatic GPT hook, and offline fallback.');
+
 
 
 
