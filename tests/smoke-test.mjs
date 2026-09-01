@@ -17,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.24 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.25 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -67,6 +67,11 @@ assert.match(html, /mushroomCulture/, 'mushroom culture, grow-bag production and
 assert.match(fsmsApi, /菇蕈菌種之培養.*K/, 'GPT must retain the ISO 22003-1 mushroom category combination');
 assert.match(html, /directHealthFood/, 'ambient ready-to-eat health food must prefer CIV over K');
 assert.match(fsmsApi, /保健食品（牛樟芝）之生產.*CIV/, 'GPT must classify direct-consumption Antrodia health food as CIV');
+assert.match(html, /stage1=1\.5/, 'IATF Stage 1 must be fixed at 1.5 MD');
+assert.match(html, /designFactor=hasDesign\?1:\.85/, 'IATF Rule 6 must apply 0.85 when design is absent');
+assert.match(html, /stage2Base=iatfRule6Days\(s2\[2\],designFactor\)/, 'IATF design factor must apply to Stage 2');
+assert.match(html, /surveillanceBase=iatfRule6Days\(s2\[3\],designFactor\)/, 'IATF design factor must apply to surveillance');
+assert.match(html, /recertBase=iatfRule6Days\(recert\[2\],designFactor\)/, 'IATF design factor must apply to recertification');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
@@ -152,6 +157,7 @@ assert.match(outbound.instructions,/不可依 NACE、EA 或 QMS\/EMS\/OHSMS 技�
 assert.equal(outbound.text.format.strict,true);
 delete process.env.OPENAI_API_KEY;
 console.log('Smoke tests passed: syntax, API loading, structured GPT request, secret scan, automatic GPT hook, and offline fallback.');
+
 
 
 
