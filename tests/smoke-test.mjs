@@ -17,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.20 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.21 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -58,6 +58,9 @@ assert.match(html, /aquaticPrimary=.*初級改製/, 'aquatic primary conversion 
 assert.match(html, /if\(aquaticPrimary\)\{result\.add\('C0'\)/, 'aquatic primary conversion must retain C0');
 assert.match(html, /if\(!aquaticFurther\)result\.delete\('CI'\)/, 'CI must not be added merely because primary aquatic conversion is frozen');
 assert.match(fsmsApi, /水產品的「初級改製／初級轉換」/, 'GPT must distinguish C0 aquatic primary conversion from CI further processing');
+assert.match(html, /explicitPrimaryAndProcessing=/, 'explicit primary conversion and processing wording must be treated as two activities');
+assert.match(html, /aquaticFurther=explicitPrimaryAndProcessing\|\|/, 'explicit processing after primary conversion must retain CI');
+assert.match(fsmsApi, /初級改製及加工/, 'GPT must return C0 plus CI when both activities are explicit');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
