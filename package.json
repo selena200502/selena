@@ -1,6 +1,6 @@
 {
-  "name": "v8-1-18-web-r3",
-  "version": "8.1.18-r3",
+  "name": "v8-1-19-web-r3",
+  "version": "8.1.19-r3",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
