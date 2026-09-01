@@ -17,7 +17,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.17 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.18 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -40,12 +40,15 @@ assert.match(html, /site_stage_1_and_2_sum/, 'FSMS initial total must sum alloca
 assert.match(html, /annual_addition_days:annual/, 'FSMS yearly P46/P47-style additions must be added to initial total');
 assert.match(html, /stage2Total=stage2BeforeAnnual\+annual/, 'FSMS yearly initial addition must be allocated to Stage 2 for display');
 assert.match(html, /stage_sum_matches_total:/, 'FSMS JSON must explicitly verify Stage 1 plus Stage 2 equals the initial total');
-assert.match(html, /if\(cold\)\{result\.delete\('CIV'\)/, 'frozen or chilled food must never remain CIV');
+assert.match(html, /if\(cold\)\{if\(!ambient\)result\.delete\('CIV'\)/, 'cold-only food must not remain CIV, while separate ambient products may retain it');
 assert.match(html, /if\(animal&&plant\)\{[^}]*result\.add\('CIII'\)/, 'mixed frozen food must map to CIII');
 assert.match(fsmsApi, /冷凍／冷藏食品不得回傳 CIV/, 'GPT must classify frozen food by CI/CII/CIII product composition');
 assert.match(fsmsApi, /正式表沒有完全相同的產品字眼但沒有類別定義衝突，保留 GPT 最合理建議/, 'FSMS formal lookup must validate rather than override GPT when wording is absent');
 assert.match(html, /genericPrepared&&perishables\.length!==1/, 'ambiguous frozen prepared food must not retain CI, CII and CIII as simultaneous alternatives');
 assert.match(fsmsApi, /不可因資訊不足就把三者全部列為適用類別/, 'GPT prompt must forbid treating CI/CII/CIII alternatives as simultaneous applicable categories');
+assert.match(html, /ingredientText=text\.replace\(\/蛋糕\/g,''\)/, 'cake wording must not be treated as proof of an animal-only product');
+assert.match(html, /if\(!ambient\)result\.delete\('CIV'\)/, 'CIV must remain when a scope contains separate ambient products');
+assert.match(fsmsApi, /冷藏蛋糕、常溫蛋糕與餅乾之生產/, 'GPT prompt must preserve CIII plus CIV for mixed storage-condition cake and biscuit scope');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
