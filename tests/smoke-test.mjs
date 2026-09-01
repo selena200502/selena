@@ -41,9 +41,11 @@ assert.match(html, /annual_addition_days:annual/, 'FSMS yearly P46/P47-style add
 assert.match(html, /stage2Total=stage2BeforeAnnual\+annual/, 'FSMS yearly initial addition must be allocated to Stage 2 for display');
 assert.match(html, /stage_sum_matches_total:/, 'FSMS JSON must explicitly verify Stage 1 plus Stage 2 equals the initial total');
 assert.match(html, /if\(cold\)\{result\.delete\('CIV'\)/, 'frozen or chilled food must never remain CIV');
-assert.match(html, /if\(animal&&plant\)result\.add\('CIII'\)/, 'mixed frozen food must map to CIII');
+assert.match(html, /if\(animal&&plant\)\{[^}]*result\.add\('CIII'\)/, 'mixed frozen food must map to CIII');
 assert.match(fsmsApi, /冷凍／冷藏食品不得回傳 CIV/, 'GPT must classify frozen food by CI/CII/CIII product composition');
 assert.match(fsmsApi, /正式表沒有完全相同的產品字眼但沒有類別定義衝突，保留 GPT 最合理建議/, 'FSMS formal lookup must validate rather than override GPT when wording is absent');
+assert.match(html, /genericPrepared&&perishables\.length!==1/, 'ambiguous frozen prepared food must not retain CI, CII and CIII as simultaneous alternatives');
+assert.match(fsmsApi, /不可因資訊不足就把三者全部列為適用類別/, 'GPT prompt must forbid treating CI/CII/CIII alternatives as simultaneous applicable categories');
 assert.match(html, /runNaceV2\(\);let refreshed/, 'async FSMS result must rerun the complete no-NACE finalization layer');
 assert.match(html, /fetch\('\/api\/classify-fsms'/, 'ISO 22000 must use its own GPT classification endpoint');
 assert.match(html, /highestScopeRisk\(data,finalScopes=\[\]\)/, 'highest-risk selection must accept the final classified scopes');
