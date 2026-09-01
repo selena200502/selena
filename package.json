@@ -1,11 +1,12 @@
 {
-  "name": "v8-1-24-web-r3",
-  "version": "8.1.24-r3",
+  "name": "v8-1-25-web-r3",
+  "version": "8.1.25-r3",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": { "test": "node tests/smoke-test.mjs" }
 }
+
 
 
 
