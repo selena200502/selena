@@ -40,6 +40,7 @@ export default async function handler(req,res) {
       'FI 是實體零售/批發，FII 是不實際持有產品的經紀/交易；G 運輸貯藏；H 支援服務；I 包材；J 設備；K 化學/生化投入物。',
       '茶葉製造、調製或加工屬常溫穩定食品加工 CIV；同一範圍另有茶葉銷售、零售或批發時，必須另外保留 FI，因此「茶葉之加工、銷售」至少回傳 CIV 與 FI，不得只回傳其中一項。',
       '若冷凍調理食品未說明動物性、植物性或混合原料，應以產品語意提出 CI／CII／CIII 中最合理候選，review_required=true，並在 missing_information 要求確認主要原料組成；絕不可用 CIV 代替。',
+      'CI、CII、CIII 是依原料組成區分的互斥候選；不可因資訊不足就把三者全部列為適用類別。泛稱「冷凍調理食品」且未提供原料時，以通常的混合調理餐食提出 CIII 單一建議並要求確認原料；只有範圍明列多種彼此獨立的動物、植物或混合產品時才可同時回傳多個 C 類別。',
       'allowed_categories 是正式定義來源；不要輸出風險、複雜度、NACE、EA 或人天。'
     ].join('\n');
     const apiResponse=await fetch(OPENAI_URL,{method:'POST',headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,instructions,input:JSON.stringify(payload),text:{format:{type:'json_schema',name:'fsms_classification',strict:true,schema}}})});
