@@ -1,10 +1,11 @@
 {
-  "name": "v8-1-26-web-r3",
-  "version": "8.1.26-r3",
+  "name": "v8-1-27-web-r3",
+  "version": "8.1.27-r3",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
-  "scripts": { "test": "node tests/smoke-test.mjs" }
+  "scripts": { "test": "node tests/smoke-test.mjs" },
+  "dependencies": { "fflate": "^0.8.2" }
 }
 
 

@@ -10,6 +10,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'build-ui.js'), 'utf8');
 const api = fs.readFileSync(path.join(root, 'api/classify.mjs'), 'utf8');
 const fsmsApi = fs.readFileSync(path.join(root, 'api/classify-fsms.mjs'), 'utf8');
+const r21Api = fs.readFileSync(path.join(root, 'api/export-r21.mjs'), 'utf8');
 const riskEngineSource = fs.readFileSync(path.join(root, 'risk-engine.js'), 'utf8');
 for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
   if (match[1].trim()) new vm.Script(match[1]);
@@ -17,7 +18,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.26 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.27 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -33,6 +34,10 @@ assert.match(html, /controlling_category/, 'FSMS must retain the highest-TD cont
 assert.match(html, /FSMS_CATEGORIES/, 'FSMS categories must be an independent controlled dataset');
 assert.match(html, /nace_applicability:'NOT_APPLICABLE'/, 'FSMS must explicitly exclude NACE 2.0');
 assert.match(html, /risk:'高',complexity:'高'/, 'FSMS risk and complexity must both be high');
+assert.match(html, /fetch\('\/api\/export-r21'/, 'IATF UI must download an R21 workbook copy');
+assert.match(html, /downloadR21Iatf/, 'IATF R21 download control must be present');
+assert.match(r21Api, /IATF 16949/, 'R21 export must target the dedicated IATF worksheet');
+assert.match(r21Api, /fullCalcOnLoad/, 'downloaded workbook must recalculate formulas in Excel');
 assert.match(html, /GPT_ISO_22003_1_WITH_FORMAL_CATEGORY_VALIDATION/, 'FSMS must use GPT ISO 22003-1 classification with formal table validation');
 assert.match(html, /selection_mode:'AUTO_ONLY_READ_ONLY'/, 'FSMS categories must be automatic and read-only');
 assert.match(html, /result\.add\('FI'\)/, 'tea sales guardrail must retain FI alongside processing');
