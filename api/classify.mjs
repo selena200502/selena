@@ -71,6 +71,7 @@ export default async function handler(req, res) {
       '每個 candidate 只代表一個 scope_segment 的一個獨立交付活動。scope_segment 必須逐字等於 input.scope_segments 的一項。',
       '同段明列製造／生產／加工／組裝與銷售／買賣／配銷／批發時，必須同時輸出製造與貿易候選，互不覆蓋。',
       '多產品、多製程、多服務或多活動應分列，最多十二項。附屬於主要交付的設計、安裝、維修、檢驗不另分類，除非文字明示為獨立或受託服務。',
+      '同一範圍含冷氣機與電冰箱之組裝時，必須逐產品保留兩個製造候選：冷氣機依 NACE 28.25，電冰箱依 NACE 27.51；不得以「家電」概括後只保留 27.51。EA 不由你輸出。',
       '依產品功能、最終用途、材料與實際製程綜合判斷，不可只靠關鍵字；產品名稱本身不可自動產生製造活動。',
       '原料、半成品、成品與純銷售必須分開。初級塑膠需有聚合／造粒證據；薄膜板片等成品不因材質名稱歸入初級原料。',
       'reason 必須摘要 Division→Group→Class 與 Included/Excluded 驗證；missing_information 列出該候選缺少的案件資料。所有候選預設需人工覆核；evidence 說明範圍中的直接證據。',
@@ -93,4 +94,5 @@ export default async function handler(req, res) {
     return res.status(502).json({error:'GPT 判定暫時無法使用；前端將保留離線規則引擎結果。'});
   }
 }
+
 
