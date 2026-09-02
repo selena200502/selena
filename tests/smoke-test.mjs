@@ -18,7 +18,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.29 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.30 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -36,7 +36,7 @@ assert.match(html, /nace_applicability:'NOT_APPLICABLE'/, 'FSMS must explicitly 
 assert.match(html, /risk:'高',complexity:'高'/, 'FSMS risk and complexity must both be high');
 assert.match(html, /fetch\('\/api\/export-r21'/, 'IATF UI must download an R21 workbook copy');
 assert.match(html, /downloadR21Iatf/, 'IATF R21 download control must be present');
-assert.match(html, /mainActions\.append\(r21Button,r21Status\)/, 'R21 download control must remain visible in the main action row');
+assert.match(html, /R21_DOWNLOAD_VISIBLE=false/, 'R21 download UI must remain collapsed until explicitly reopened');
 assert.match(r21Api, /IATF 16949/, 'R21 export must target the dedicated IATF worksheet');
 assert.match(r21Api, /fullCalcOnLoad/, 'downloaded workbook must recalculate formulas in Excel');
 assert.match(html, /QMS／EMS／OHSMS／EnMS／FSMS／IATF/, 'R21 download UI must state all supported systems');
