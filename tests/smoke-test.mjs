@@ -141,7 +141,16 @@ const riskEngine = riskSandbox.RiskEngine;
 assert.equal(riskEngine.riskReferenceClass('20.30','12','ISO 9001','塗料製造'), '12');
 assert.equal(riskEngine.riskReferenceClass('49.41','31','ISO 14001','危險貨物運輸'), '31-3');
 assert.equal(riskEngine.riskReferenceClass('49.41','31','ISO 45001','一般貨物運輸'), '31-2');
-assert.equal(riskEngine.riskReferenceClass('82.92','35','ISO 9001','包裝服務'), '35-1');
+for (const nace of ['81.21','81.22','81.29']) {
+  for (const system of ['ISO 9001','ISO 14001','ISO 45001']) {
+    assert.equal(riskEngine.serviceRiskReferenceClass(nace, system), '35-1');
+    assert.equal(riskEngine.riskReferenceClass(nace, '35', system, '清潔／設施服務'), '35-1');
+  }
+}
+for (const system of ['ISO 9001','ISO 14001','ISO 45001']) {
+  assert.equal(riskEngine.serviceRiskReferenceClass('82.92', system), '35-1');
+  assert.equal(riskEngine.riskReferenceClass('82.92', '35', system, '包裝服務'), '35-1');
+}
 // A changed or fabricated certification category is no longer an input, so it
 // cannot overwrite the risk-workbook reference class.
 assert.equal(riskEngine.riskReferenceClass('20.30','12','ISO 9001','99'), '12');
