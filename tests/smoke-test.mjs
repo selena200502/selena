@@ -18,7 +18,7 @@ for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))
 new vm.Script(ui);
 assert.match(html, /fetch\('\/api\/classify'/, 'front end must POST to /api/classify');
 assert.match(html, /runNaceV2BeforeV4Hybrid/, 'offline engine must run before GPT hook');
-assert.match(ui, /GPT Online \+ V8\.1\.31 Validation/);
+assert.match(ui, /GPT Online \+ V8\.1\.32 Validation/);
 assert.match(ui, /Offline Fallback/);
 assert.match(ui, /r3EnsureApiReady/);
 assert.doesNotMatch(html, /原始錯誤：/);
@@ -46,6 +46,11 @@ assert.match(api, /冷氣機與電冰箱之組裝.*NACE 28\.25.*NACE 27\.51/, 'G
 assert.match(html, /DIRECT-AIRCON-REFRIGERATOR-GUARD/, 'final visible output must retain both air-conditioner and refrigerator combinations even if GPT omits one');
 assert.match(html, /'28\.25':\{'ISO 9001':'18'/, 'NACE 28.25 must map to QMS EA 18');
 assert.match(html, /'27\.51':\{'ISO 9001':'19'/, 'NACE 27.51 must map to QMS EA 19');
+assert.match(html, /NACE-25\.50-APPLIANCE-PARTS-STAMPING/, 'appliance stamped parts must use the explicit NACE 25.50 rule');
+assert.match(html, /FORMAL-APPLIANCE-STAMPED-PARTS-25\.50/, 'final output must suppress whole-appliance EA 18 and EA 19 for stamped parts');
+assert.match(html, /'25\.50':\{ea:'17'/, 'NACE 25.50 must map to EA 17');
+assert.match(api, /零件之沖壓與製造.*只能回傳 25\.50.*不得另加整機 27\.51 或 28\.25/, 'GPT must classify the actual stamped-parts deliverable instead of end-use appliances');
+assert.match(api, /'IATF 16949'/, 'IATF must use the GPT-first NACE classification endpoint');
 for (const system of ['ISO 9001','ISO 14001','ISO 45001','ISO 50001','ISO 22000','IATF 16949']) assert.match(r21Api, new RegExp(system.replace(' ', '\\s')), `R21 export must map ${system}`);
 assert.match(r21Api, /網站判定套表/, 'R21 export must populate the universal website summary sheet');
 assert.match(html, /GPT_ISO_22003_1_WITH_FORMAL_CATEGORY_VALIDATION/, 'FSMS must use GPT ISO 22003-1 classification with formal table validation');
