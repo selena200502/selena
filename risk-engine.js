@@ -46,9 +46,9 @@
   }
   function serviceRiskReferenceClass(nace,system){
     const code=String(nace||'');
-    // NACE 82 is business-support service delivery (including packaging). Its
-    // certification EA stays 35; the independent risk sheet uses class 35-1.
-    if(/^82\./.test(code)&&['ISO 9001','ISO 14001','ISO 45001'].includes(system))return '35-1';
+    // NACE 81 facilities/cleaning and NACE 82 business-support services use
+    // risk-sheet class 35-1. Their certification EA/NACE stays unchanged.
+    if(/^(81|82)\./.test(code)&&['ISO 9001','ISO 14001','ISO 45001'].includes(system))return '35-1';
     // Head-office/enterprise management is explicitly class 35-2 in EMS/OHSMS.
     if(/^70\.(10|22)$/.test(code))return system==='ISO 9001'?'35-1':'35-2';
     return '';
