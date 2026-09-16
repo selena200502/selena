@@ -28,6 +28,13 @@ test('approved verified user receives complete GPT result and strict schema',asy
   const res=await run();assert.equal(res.code,200);assert.deepEqual(res.body,result);
   const body=JSON.parse(calls[0].options.body);assert.equal(body.store,false);assert.equal(body.text.format.strict,true);assert.deepEqual(JSON.parse(body.input),{scope:'冷氣機之生產'});
 });
+test('both approved email accounts are accepted after verification',async()=>{
+  for (const email of ['selena.yeh@ucscert.com.tw','selena424@hotmail.com']) {
+    account={emailAddresses:[{emailAddress:email,verification:{status:'verified'}}]};
+    assert.equal((await run()).code,200);
+  }
+  account={emailAddresses:[{emailAddress:'selena.yeh@ucscert.com.tw',verification:{status:'verified'}}]};
+});
 test('anonymous requests cannot call GPT',async()=>{authenticated=false;try{assert.equal((await run()).code,401);assert.equal(calls.length,0);}finally{authenticated=true;}});
 test('unverified and lookalike email addresses cannot call GPT',async()=>{
   for(const email of ['selena.yeh@ucscert.com.tw.attacker.test','other@ucscert.com.tw']){account={emailAddresses:[{emailAddress:email,verification:{status:'verified'}}]};assert.equal((await run()).code,403);assert.equal(calls.length,0);}
