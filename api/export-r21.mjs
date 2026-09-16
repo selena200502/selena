@@ -1,3 +1,4 @@
+import { authorize, sameOrigin } from '../lib/access.mjs';
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate';
 import templateBase64 from './r21-template-base64.mjs';
 
@@ -52,6 +53,7 @@ function targetSheet(data) {
 }
 
 export default async function handler(req, res) {
+  if (!sameOrigin(req, res) || !await authorize(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const data = req.body || {};
@@ -101,4 +103,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: '無法產生 R21 驗證人天表，請稍後再試。' });
   }
 }
+
 

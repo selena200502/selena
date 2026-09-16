@@ -1,3 +1,4 @@
+import { authorize, sameOrigin } from '../lib/access.mjs';
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.4-mini';
 const OPENAI_URL = 'https://api.openai.com/v1/responses';
 const MAX_REQUEST_BYTES = 256_000;
@@ -50,6 +51,7 @@ const schema = dual => ({
 });
 
 export default async function handler(req, res) {
+  if (!sameOrigin(req, res) || !await authorize(req, res)) return;
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({error:'Method not allowed'});
   if (!process.env.OPENAI_API_KEY) return res.status(503).json({error:'尚未設定 OPENAI_API_KEY；前端將改用離線規則引擎。'});
@@ -95,5 +97,6 @@ export default async function handler(req, res) {
     return res.status(502).json({error:'GPT 判定暫時無法使用；前端將保留離線規則引擎結果。'});
   }
 }
+
 
 

@@ -3,14 +3,14 @@
   "version": "8.1.32-r3",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
-  "scripts": { "test": "node tests/smoke-test.mjs" },
-  "dependencies": { "fflate": "^0.8.2" }
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --experimental-test-module-mocks --test tests/qms-review.test.mjs"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "@clerk/backend": "^3.18.1"
+  }
 }
-
-
-
-
-
-
-
