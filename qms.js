@@ -17,10 +17,10 @@ async function init() {
     await loadScript('https://'+domain+'/npm/@clerk/ui@1/dist/ui.browser.js');
     await loadScript('https://'+domain+'/npm/@clerk/clerk-js@6/dist/clerk.browser.js',config.publishableKey);
     clerk=window.Clerk;await clerk.load({ui:{ClerkUI:window.__internal_ClerkUICtor}});
-    if(!clerk.isSignedIn){status('請先登入指定帳號。');clerk.mountSignIn(el('login-widget'),{forceRedirectUrl:location.origin});el('signup').hidden=false;return;}
+    if(!clerk.isSignedIn){status('請先登入已核准帳號。');clerk.mountSignIn(el('login-widget'),{forceRedirectUrl:location.href});el('signup').hidden=false;return;}
     el('login').hidden=true;el('logout').hidden=false;
     const session=await fetch('/api/session',{headers:await sessionHeaders(),cache:'no-store'});const user=await session.json();if(!session.ok)throw new Error(user.error);
-    el('review').hidden=false;status('已登入：'+user.email);
+    el('review').hidden=false;status('已登入：'+user.email+(user.isAdmin?'　｜　管理者核准：/admin.html':''));
   }catch(error){status(error.message || '登入服務無法使用，請重新整理。',true);}
 }
 el('logout').addEventListener('click',()=>clerk.signOut({redirectUrl:location.origin}));

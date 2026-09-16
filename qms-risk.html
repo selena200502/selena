@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QMS 驗證範圍風險審查</title><link rel="stylesheet" href="/qms.css"><script type="module" src="/qms.js"></script></head>
+<body><main><p><a href="/">← 返回工具入口</a></p>
+<header><div><p class="eyebrow">ISO 9001 · IAF MD 5</p><h1>QMS 驗證範圍風險審查</h1><p class="lead">只需填寫驗證服務範圍，GPT 會分析用途、功能與失效後果。</p></div><button id="logout" class="secondary" hidden>登出</button></header>
+<section id="login"><h2>帳號登入</h2><p>請使用已由管理者核准的電子郵件登入。</p><div id="login-widget"></div><button id="signup" class="secondary" hidden>首次使用：建立登入帳號</button><button id="signin" class="secondary" hidden>返回登入</button></section>
+<p id="status" role="status" aria-live="polite">正在確認登入服務…</p>
+<section id="review" hidden><form id="scope-form"><label for="scope">驗證服務範圍</label><textarea id="scope" maxlength="2500" required placeholder="例如：冷氣機之生產／油漆之製造及銷售"></textarea><div class="actions"><button id="assess" type="submit">由 GPT 分析</button><span>無需另外填寫用途、功能或失效後果。</span></div></form><section id="result" aria-live="polite"><p class="muted">分析結果會顯示在這裡。</p></section></section>
+<footer><p>依據 <a href="https://iaf.nu/iaf_system/uploads/documents/IAF_MD5_Issue_4_Version_3_14062023.pdf" target="_blank" rel="noopener">IAF MD 5:2023 第 8 章及附錄 A QMS 2</a>：失效可能造成經濟災難或危及生命，屬高風險因素。</p><p>本結果供初步審查使用；用途未明時會列出推估條件。高風險需考量增加稽核人天，實際調整由驗證機構審查決定，標準未規定固定增加天數或比例。</p></footer>
+</main></body></html>
